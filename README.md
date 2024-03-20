@@ -67,11 +67,11 @@ Read more about [Astro’s content collections](https://docs.astro.build/en/guid
 
     [] Product pages in an eCommerce site
 
-    [] A contact page, because you do not have multiple similar pages of this type
+    [x] A contact page, because you do not have multiple similar pages of this type
 
 2. Which is **not** a benefit of moving blog posts to a content collection?
 
-    [] Pages are automatically created for each file
+    [x] Pages are automatically created for each file
 
     [] Better error messages, because Astro knows more about each file
 
@@ -81,7 +81,7 @@ Read more about [Astro’s content collections](https://docs.astro.build/en/guid
 
     [] To make me feel bad
 
-    [] To understand my project, even if I don’t write any TypeScript
+    [x] To understand my project, even if I don’t write any TypeScript
 
     [] Only if I have the strict or strictest configuration set
 
@@ -105,7 +105,285 @@ npm install @astrojs/preact@latest
 > **Tip**<br>
 If you are using your own project, then be sure to update any dependencies you have installed. The example blog tutorial codebase only uses the Preact integration.
 
-CONTINUE HERE
+2. The blog tutorial uses the `base` (least strict) TypeScript setting. In order to use content collections, you must [set up TypeScript](https://docs.astro.build/en/guides/content-collections/#setting-up-typescript) for content collections **either** by using the `strict` or `strictest` setting, **or** by adding two options in `tsconfig.json`.
+
+In order to use content collections without writing TypeScript in the rest of the blog tutorial example, add the following two TypeScript configuration options to the config file (`tsconfig.json`):
+
+```jsx
+{
+  // Note: No change needed if you use "astro/tsconfigs/strict" or "astro/tsconfigs/strictest"
+  "extends": "astro/tsconfigs/base",
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "allowJs": true
+  }
+}
+```
+
+### Create a collection for your blog posts
+
+3. Create a new **collection** (folder) called `src/content/posts/`.
+
+4. Move all your existing blog posts (`.md` files) from `src/pages/posts/` into this new collection.
+
+5. Create a `src/content/config.ts` file to [define a schema](https://docs.astro.build/en/guides/content-collections/#defining-a-collection-schema) for your `postsCollection`. For the existing blog tutorial code, add the following contents to the file to define all the frontmatter properties used in its blog posts:
+
+```jsx
+// Import utilities from `astro:content`
+import { z, defineCollection } from "astro:content";
+// Define a `type` and `schema` for each collection
+const postsCollection = defineCollection({
+    type: 'content',
+    schema: z.object({
+      title: z.string(),
+      pubDate: z.date(),
+      description: z.string(),
+      author: z.string(),
+      image: z.object({
+        url: z.string(),
+        alt: z.string()
+      }),
+      tags: z.array(z.string())
+    })
+});
+// Export a single `collections` object to register your collection(s)
+export const collections = {
+  posts: postsCollection,
+};
+```
+
+6. In order for Astro to recognize your schema, quit the dev server (`CTRL + C`) and run the following command: `npx astro sync`. This will define the `astro:content` module for the Content Collections API. Restart the dev server to continue with the tutorial.
+
+### Generate pages from a collection
+
+7. Create a page file called `src/pages/posts/[...slug].astro`. Your Markdown and MDX files no longer automatically become pages using Astro’s file-based routing when they are inside a collection, so you must create a page responsible for generating each individual blog post.
+
+8. Add the following code to [query your collection](https://docs.astro.build/en/guides/content-collections/#querying-collections) to make each blog post’s slug and page content available to each page it will generate:
+
+```jsx
+---
+import { getCollection } from 'astro:content';
+import MarkdownPostLayout from '../../layouts/MarkdownPostLayout.astro';
+
+export async function getStaticPaths() {
+  const blogEntries = await getCollection('posts');
+  return blogEntries.map(entry => ({
+    params: { slug: entry.slug }, props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+```
+
+9. Render your post `<Content />` within the layout for Markdown pages. This allows you to specify a common layout for all of your posts.
+
+```jsx
+---
+import { getCollection } from 'astro:content';
+import MarkdownPostLayout from '../../layouts/MarkdownPostLayout.astro';
+
+export async function getStaticPaths() {
+  const blogEntries = await getCollection('posts');
+  return blogEntries.map(entry => ({
+    params: { slug: entry.slug }, props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+<MarkdownPostLayout frontmatter={entry.data}>
+  <Content />
+</MarkdownPostLayout>
+```
+
+10. Remove the `layout` definition in each individual post’s frontmatter. Your content is now wrapped in a layout when rendered, and this property is no longer needed.
+
+Remove in every `.md` post:
+
+```
+layout: ../../layouts/MarkdownPostLayout.astro
+```
+
+### Replace `Astro.glob()` with `getCollection()`
+
+11. Anywhere you have a list of blog posts, like the tutorial’s Blog page (`src/pages/blog.astro/`), you will need to replace `Astro.glob()` with  [`getCollection()`](https://docs.astro.build/en/reference/api-reference/#getcollection) as the way to fetch content and metadata from your Markdown files.
+
+Remove from `src/pages/blog.astro/`:
+
+```jsx
+const allPosts = await Astro.glob("../pages/posts/*.md");
+```
+
+Edit in the same file:
+
+```jsx
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import BlogPost from "../components/BlogPost.astro";
+
+const pageTitle = "My Astro Learning Blog";
+const allPosts = await getCollection("posts");
+---
+```
+
+12. You will also need to update references to the data returned for each `post`. You will now find your frontmatter values on the `data` property of each object. Also, when using collections each `post` object will have a page `slug`, not a full URL.
+
+Remove from `src/pages/blog.astro/`:
+
+```jsx
+<BlogPost url={post.url} title={post.frontmatter.title} />)}
+```
+
+Edit in the same file:
+
+```jsx
+---
+import { getCollection } from "astro:content";
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+import BlogPost from "../components/BlogPost.astro";
+const pageTitle = "My Astro Learning Blog";
+const allPosts = await getCollection("posts");
+---
+
+<BaseLayout pageTitle={pageTitle}>
+  <p>This is where I will post about my journey learning Astro.</p>
+  <ul>
+    {
+      allPosts.map((post) => (
+        <BlogPost url={`/posts/${post.slug}/`} title={post.data.title} />
+      ))
+    }
+  </ul>
+</BaseLayout>
+```
+
+13. The tutorial blog project also dynamically generates a page for each tag using `src/pages/tags/[tag].astro` and displays a list of tags at `src/pages/tags/index.astro`.
+
+Apply the same changes as above to these two files:
+
+- fetch data about all your blog posts using `getCollection("posts")` instead of using `Astro.glob()`
+- access all frontmatter values using `data` instead of `frontmatter`
+- create a page URL by adding the post’s `slug` to the `/posts/` path
+
+The page (`src/pages/tags/[tag].astro`) that generates individual tag pages now becomes:
+
+```jsx
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import BlogPost from "../../components/BlogPost.astro";
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection("posts");
+  const uniqueTags = [...new Set(allPosts.map((post) => post.data.tags).flat())];
+
+  return uniqueTags.map((tag) => {
+    const filteredPosts = allPosts.filter((post) =>
+      post.data.tags.includes(tag)
+    );
+    return {
+      params: { tag },
+      props: { posts: filteredPosts },
+    };
+  });
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<BaseLayout pageTitle={tag}>
+  <p>Posts tagged with {tag}</p>
+  <ul>
+    { posts.map((post) => <BlogPost url={`/posts/${post.slug}/`} title={post.data.title} />) }
+  </ul>
+</BaseLayout>
+```
+
+### Try it yourself - Update the query in the Tag Index page
+
+Import and use `getCollection` to fetch the tags used in the blog posts on `src/pages/tags/index.astro`, following the [same steps as above](https://docs.astro.build/en/tutorials/add-content-collections/#replace-astroglob-with-getcollection).
+
+```jsx
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+const allPosts = await getCollection("posts");
+const tags = [...new Set(allPosts.map((post) => post.data.tags).flat())];
+const pageTitle = "Tag Index";
+---
+```
+
+### Update any frontmatter values to match your schema
+
+14. If necessary, update any frontmatter values throughout your project, such as in your layout, that do not match your collections schema.
+
+In the blog tutorial example, `pubDate` was a string. Now, according to the schema that defines types for the post frontmatter, `pubDate` will be a `Date` object.
+
+To render the date in the blog post layout (`src/layouts/MarkdownPostLayout.astro`), convert it to a string:
+
+```jsx
+---
+import BaseLayout from "./BaseLayout.astro";
+const { frontmatter } = Astro.props;
+---
+
+<BaseLayout pageTitle={frontmatter.title}>
+  <p>{frontmatter.pubDate.toString().slice(0, 10)}</p>
+  <p><em>{frontmatter.description}</em></p>
+  <p>Written by: {frontmatter.author}</p>
+  <img src={frontmatter.image.url} width="300" alt={frontmatter.image.alt} />
+  <slot />
+</BaseLayout>
+
+```
+
+### Update RSS function
+
+15. Lastly, the tutorial blog project includes an RSS feed. This function must also use `getCollection()` to return information from your blog posts. You will then generate the RSS items using the `data` object returned (`src/pages/rss.xml.js`).
+
+```jsx
+import rss from '@astrojs/rss';
+import { getCollection } from 'astro:content';
+
+export async function GET(context) {
+  const posts = await getCollection("posts");
+  return rss({
+    title: 'Astro Learner | Blog',
+    description: 'My journey learning Astro',
+    site: context.site,
+    items: posts.map((post) => ({
+      title: post.data.title,
+      pubDate: post.data.pubDate,
+      description: post.data.description,
+      link: `/posts/${post.slug}/`,
+    })),
+    customData: `<language>en-us</language>`,
+  })
+}
+```
+
+For the full example of the blog tutorial using content collections, see the [Content Collections branch](https://github.com/withastro/blog-tutorial-demo/tree/content-collections) of the tutorial repo.
+---
+
+####
+
+```astro
+```
+
+> GET READY TO...<br>
+&bull; x<br>
+&bull; x<br>
+&bull; x
+
+---
+
+
 
 ### Add the `<ViewTransitions />` router
 

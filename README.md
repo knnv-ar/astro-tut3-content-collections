@@ -6,25 +6,25 @@ Prerequisites
 
 Build a Blog Tutorial Code
 
-1. Full-page navigation vs client-side routing (SPA mode)
+1. Pages vs Collections
 
     1.1. Test your knowledge
 
-2. Extending the blog tutorial with view transitions
+2. Extending the blog tutorial with content collections
 
     2.1. Upgrade dependencies
 
-    2.2. Add the `<ViewTransitions />` router
+    2.2. Create a collection for your blog posts
 
-    2.3. Update scripts
+    2.3. Generate pages from a collection
 
-    2.4. Test your knowledge
+    2.4. Replace Astro.glob() with getCollection()
 
-3. Customize Transition animations
+    2.5. Try it yourself - Update the query in the Tag Index page
 
-    3.1. Try it yourself - Make the navigation links slide in
+    2.6. Update any frontmatter values to match your schema
 
-    3.2 Force a full browser reload for some links
+    2.7. Update RSS function
 
 ---
 
@@ -47,51 +47,48 @@ We recommend using our sample project to complete this short tutorial first. The
 
 #### Build a Blog Tutorial Code
 
-In the [Build a Blog introductory tutorial](https://docs.astro.build/en/tutorial/0-introduction/), you learned about Astro’s [built-in file-based routing](https://docs.astro.build/en/guides/routing/#static-routes): any `.astro`, `.md`, or `.mdx` file anywhere within the `src/pages/` folder automatically became a new page on your site.
+In the [Build a Blog introductory tutorial](https://docs.astro.build/en/tutorial/0-introduction/), you learned about Astro’s [built-in file-based routing](https://docs.astro.build/en/guides/routing/#static-routes): any `.astro`, `.md`, or `.mdx` file anywhere within the `src/pages/` folder automatically became a page on your site.
 
-To navigate between these pages, you used the standard HTML `<a>` element. For example, to create a link to your About page, you added `<a href="/about/">About</a>` to your page header. When a visitor to your site clicked that link, the browser refreshed and loaded a new page with entirely new content.
+To create your first blog post at `https://example.com/posts/post-1/`, you created a `/posts/` folder and added the file `post-1.md`. You then added a new Markdown file to this folder every time you wanted to add a new blog post to your site.
 
-## Full-page navigation vs client-side routing (SPA mode)
+## Pages vs Collections
 
-When a browser refreshes and loads a new page, there is no continuity between the old page and the new page. During **client-side routing**, a new page is displayed without a full-page browser refresh.
+Even when using content collections, you will still use the `src/pages/` folder for individual pages, such as your About Me page. But, moving your blog posts to the special `src/content/` folder will allow you to use more powerful and performant APIs to generate your blog post index and display your individual blog posts.
 
-Client-side routing is a feature of single-page application (SPA) sites, where your entire site or app is “one page” of JavaScript whose content is updated based on visitor interaction.
+At the same time, you’ll receive better guidance and autocompletion in your code editor because you will have a [**schema**](https://docs.astro.build/en/guides/content-collections/#defining-a-collection-schema) to define a common structure for each post that Astro will help you enforce. In your schema, you can specify when frontmatter properties are required, such as a description or an author, and which data type each property must be, such as a string or an array. This leads to catching many mistakes sooner, with descriptive error messages telling you exactly what the problem is.
 
-Because each new page does not require a full browser refresh, client-side routing allows you to control page transitions in several ways. **Persistent elements**, such as a common page header, do not have to be entirely rerendered on the screen. The transition from one page to another can appear much smoother. And, **state can be preserved**, allowing you to transfer values from one page to the next, or even keep a video playing as your visitors navigate pages!
+Read more about [Astro’s content collections](https://docs.astro.build/en/guides/content-collections/) in our guide, or get started with the instructions below to convert a basic blog from `src/pages/posts/` to `src/content/posts/`.
 
-There are times when you will want or need a full-page browser refresh. For example, when a link takes a visitor to a `.pdf` document, you will need the browser to load that new page from the server. Even with view transitions enabled in your Astro project, you will be able to specify how the browser should navigate both by default and on a per-link basis, even opting out of client-side routing entirely.
+### Test your knowledge
 
-Read more about [Astro’s view transitions](https://docs.astro.build/en/guides/view-transitions/) in our guide, or dive into the instructions below to extend the blog with view transitions.
-`
-#### Test your knowledge
+1. Which type of page would you probably keep in `src/pages/`?
 
-1. Adding view transitions to my astro site…
+    [] Blog posts that all contain the same basic structure and metadata
 
-    [] Requires more than 2 lines of code to implement site-wide by default
+    [] Product pages in an eCommerce site
 
-    [x] Changes the default type of page navigation on a page that contains the `<ViewTransitions />` router in its `<head>`
+    [] A contact page, because you do not have multiple similar pages of this type
 
-    [] Does not add back accessibility features normally provided by the browser, such as route announcement and respect for `prefers-reduced-motion`
+2. Which is **not** a benefit of moving blog posts to a content collection?
 
-2. Which is **not** a benefit of Astro’s view transitions?
+    [] Pages are automatically created for each file
 
-    [x] Sending some additional JavaScript to the browser for client-side routing
+    [] Better error messages, because Astro knows more about each file
 
-    [] The option to persist individual elements and components as a visitor visits a new page
+    [] Better data fetching, with a more performant function
 
-    [] Controlling which kind of navigation to use on a per-link basis
+3. Content collections uses TypeScript…
 
-3. The view transitions router…
+    [] To make me feel bad
 
-    [] Requires me to use a UI framework such as React
+    [] To understand my project, even if I don’t write any TypeScript
 
-    [] Is not ready for production sites
+    [] Only if I have the strict or strictest configuration set
 
-    [x] Includes fallback behavior for browsers that do not yet fully support view transitions
 
-## Extending the blog tutorial with view transitions
+## Extending the blog tutorial with content collections
 
-The steps below show you how to extend the final product of the Build a Blog tutorial by adding client-side routing to enhance page transitions.
+The steps below show you how to extend the final product of the Build a Blog tutorial by creating a content collection for the blog posts.
 
 ### Upgrade dependencies
 
@@ -108,6 +105,7 @@ npm install @astrojs/preact@latest
 > **Tip**<br>
 If you are using your own project, then be sure to update any dependencies you have installed. The example blog tutorial codebase only uses the Preact integration.
 
+CONTINUE HERE
 
 ### Add the `<ViewTransitions />` router
 
